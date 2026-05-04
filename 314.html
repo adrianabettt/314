@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação: Decomposição de Problemas</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+        :root {
+            --queijo: #FBBF24;
+            --tomate: #EF4444;
+            --massa: #FDE68A;
+            --azul: #2563EB;
+            --bg: #F8FAFC;
+            --txt: #1E293B;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--txt); }
+
+        .topo { 
+            background: linear-gradient(135deg, #2563EB, #7C3AED); 
+            color: #fff; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .tela { display: none; padding: 20px; max-width: 800px; margin: auto; }
+        .ativa { display: block; animation: fadeIn 0.4s; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .card { background: #fff; border-radius: 20px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+
+        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+
+        .lista-fatias { background: #F1F5F9; padding: 15px; border-radius: 15px; border: 2px dashed #CBD5E0; min-height: 250px; display: flex; flex-direction: column; }
+
+        .fatia { 
+            background: var(--queijo); padding: 12px; margin: 8px 0; 
+            border-radius: 10px; cursor: grab; font-weight: 700; 
+            border: 2px solid #D97706; transition: 0.2s;
+        }
+
+        .pizza-alvo { 
+            width: 280px; height: 280px; background: var(--massa); 
+            border-radius: 50%; border: 8px solid #D97706; margin: auto;
+            display: flex; flex-wrap: wrap; align-content: center; justify-content: center;
+            position: relative; transition: 0.3s;
+        }
+
+        .fatia-no-alvo {
+            background: var(--tomate); color: white; padding: 5px 8px;
+            margin: 3px; border-radius: 5px; font-size: 12px; font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn { 
+            padding: 15px 30px; border-radius: 50px; border: none; 
+            cursor: pointer; font-weight: 900; margin-top: 20px; transition: 0.3s;
+        }
+
+        .btn-v { background: #16A34A; color: #fff; }
+        .btn-a { background: var(--azul); color: #fff; }
+
+        .correcao-box { text-align: left; background: #fff; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #E2E8F0; }
+        .badge-erro { color: var(--tomate); font-weight: 800; }
+        .badge-acerto { color: #16A34A; font-weight: 800; }
+
+        footer { text-align: center; padding: 20px; font-size: 12px; color: #64748B; }
+    </style>
+</head>
+<body>
+
+<div class="topo">
+    <h2>🍕 Teste de Decomposição</h2>
+    <div id="progresso">Fase 1 de 3</div>
+</div>
+
+<div class="tela ativa" id="inicio">
+    <div class="card">
+        <h1>Avaliação de Algoritmos ✍️</h1>
+        <p>Para cada problema, escolha as <b>3 fatias corretas</b>.</p>
+        <p>A pontuação será calculada com base nos seus acertos!</p>
+        <button class="btn btn-a" onclick="proximaFase()">COMEÇAR TESTE</button>
+    </div>
+</div>
+
+<div class="tela" id="jogo">
+    <div class="card">
+        <h2 id="titulo-problema">Carregando...</h2>
+        <p>Arraste para o círculo as partes que compõem este problema:</p>
+        
+        <div class="game-grid">
+            <div class="lista-fatias" id="origem" ondrop="dropVolta(event)" ondragover="allowDrop(event)"></div>
+            <div>
+                <div class="pizza-alvo" id="destino" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <small id="aviso" style="color:#D97706; font-weight: bold;">ARRASTE 3 PARTES</small>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-v" id="btn-confirmar" onclick="confirmarEscolha()">FINALIZAR FASE</button>
+    </div>
+</div>
+
+<div class="tela" id="final">
+    <div class="card">
+        <h1>Nota da Avaliação</h1>
+        <div id="nota-container" style="font-size: 60px; font-weight: 900; color: var(--azul); margin: 10px 0;">0.0</div>
+        <div id="relatorio"></div>
+        <button class="btn btn-a" onclick="location.reload()">REFAZER AVALIAÇÃO</button>
+    </div>
+</div>
+
+<footer>Habilidade EF03CO03 - 2026</footer>
+
+<script>
+    const DESAFIOS = [
+        {
+            t: "Organizar uma Festa 🎈",
+            itens: [
+                {id: 'c1', txt: "Lista de convidados", ok: true},
+                {id: 'c2', txt: "Comprar bolo", ok: true},
+                {id: 'c3', txt: "Decorar a sala", ok: true},
+                {id: 'e1', txt: "Lavar o carro", ok: false}
+            ]
+        },
+        {
+            t: "Fazer Jornal da Turma 📰",
+            itens: [
+                {id: 'c4', txt: "Entrevistar pessoas", ok: true},
+                {id: 'c5', txt: "Escrever notícias", ok: true},
+                {id: 'c6', txt: "Tirar fotos", ok: true},
+                {id: 'e2', txt: "Comprar guarda-chuva", ok: false}
+            ]
+        },
+        {
+            t: "Planejar Passeio 🌳",
+            itens: [
+                {id: 'c7', txt: "Ver o mapa", ok: true},
+                {id: 'c8', txt: "Preparar lanche", ok: true},
+                {id: 'c9', txt: "Combinar horário", ok: true},
+                {id: 'e3', txt: "Pintar o quarto", ok: false}
+            ]
+        }
+    ];
+
+    let fase = -1;
+    let totalAcertosGerais = 0;
+    const totalPossivelAcertos = 9; // 3 desafios * 3 fatias certas
+    let feedbacks = [];
+
+    function allowDrop(ev) { ev.preventDefault(); }
+
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+
+    function drop(ev) {
+        ev.preventDefault();
+        const id = ev.dataTransfer.getData("text");
+        const el = document.getElementById(id);
+        const destino = document.getElementById('destino');
+        
+        // Limite de 3 itens na pizza
+        if (destino.querySelectorAll('.fatia-no-alvo').length >= 3) {
+            alert("A pizza já tem 3 fatias! Remova uma para trocar.");
+            return;
+        }
+
+        document.getElementById('aviso').style.display = 'none';
+        destino.appendChild(el);
+        el.className = "fatia-no-alvo";
+    }
+
+    function dropVolta(ev) {
+        ev.preventDefault();
+        const id = ev.dataTransfer.getData("text");
+        const el = document.getElementById(id);
+        ev.currentTarget.appendChild(el);
+        el.className = "fatia";
+        
+        const destino = document.getElementById('destino');
+        if (destino.querySelectorAll('.fatia-no-alvo').length === 0) {
+            document.getElementById('aviso').style.display = 'block';
+        }
+    }
+
+    function proximaFase() {
+        fase++;
+        if(fase < DESAFIOS.length) {
+            document.getElementById('progresso').innerText = `Fase ${fase + 1} de 3`;
+            carregarDesafio();
+            irPara('jogo');
+        } else {
+            mostrarFinal();
+        }
+    }
+
+    function carregarDesafio() {
+        const d = DESAFIOS[fase];
+        document.getElementById('titulo-problema').innerText = d.t;
+        const origem = document.getElementById('origem');
+        const destino = document.getElementById('destino');
+        origem.innerHTML = "";
+        destino.innerHTML = '<small id="aviso" style="color:#D97706; font-weight: bold;">ARRASTE 3 PARTES</small>';
+
+        const embaralhados = [...d.itens].sort(() => Math.random() - 0.5);
+        embaralhados.forEach(item => {
+            const div = document.createElement('div');
+            div.className = "fatia";
+            div.id = item.id;
+            div.innerText = item.txt;
+            div.draggable = true;
+            div.ondragstart = drag;
+            origem.appendChild(div);
+        });
+    }
+
+    function confirmarEscolha() {
+        const destino = document.getElementById('destino');
+        const itensEscolhidos = destino.querySelectorAll('.fatia-no-alvo');
+        
+        if(itensEscolhidos.length !== 3) {
+            alert("A pizza precisa ter exatamente 3 fatias para ser concluída!");
+            return;
+        }
+
+        let acertosNestaFase = 0;
+        let escolheuErrada = false;
+        let textoErrado = "";
+
+        itensEscolhidos.forEach(el => {
+            const itemOriginal = DESAFIOS[fase].itens.find(i => i.id === el.id);
+            if(itemOriginal.ok) {
+                acertosNestaFase++;
+            } else {
+                escolheuErrada = true;
+                textoErrado = itemOriginal.txt;
+            }
+        });
+
+        totalAcertosGerais += acertosNestaFase;
+
+        // Salva feedback para o final
+        feedbacks.push({
+            titulo: DESAFIOS[fase].t,
+            acertos: acertosNestaFase,
+            erroCometido: escolheuErrada ? textoErrado : null,
+            bugReal: DESAFIOS[fase].itens.find(i => !i.ok).txt
+        });
+        
+        proximaFase();
+    }
+
+    function mostrarFinal() {
+        irPara('final');
+        // Cálculo da nota de 0 a 10 proporcional aos 9 acertos possíveis
+        const notaFinal = ((totalAcertosGerais / totalPossivelAcertos) * 10).toFixed(1);
+        document.getElementById('nota-container').innerText = notaFinal;
+        
+        let relHTML = "<h3>Relatório de Decomposição:</h3>";
+        feedbacks.forEach(f => {
+            relHTML += `<div class="correcao-box">
+                <b>Problema: ${f.titulo}</b><br>
+                Resultado: <span class="badge-acerto">${f.acertos} / 3 acertos</span><br>`;
+            
+            if(f.erroCometido) {
+                relHTML += `<span class="badge-erro">Atenção:</span> Você incluiu o bug "<i>${f.erroCometido}</i>".<br>`;
+            } else {
+                relHTML += `<span class="badge-acerto">Parabéns!</span> Você ignorou o bug corretamente.<br>`;
+            }
+            
+            relHTML += `O item intruso era: <b>${f.bugReal}</b>.</div>`;
+        });
+        document.getElementById('relatorio').innerHTML = relHTML;
+    }
+
+    function irPara(id) {
+        document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+        document.getElementById(id).classList.add('ativa');
+    }
+</script>
+
+</body>
+</html>
